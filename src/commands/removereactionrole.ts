@@ -20,7 +20,7 @@ class RemoveReactionRoleCommand extends Command {
         type: ApplicationCommandOptionType.String,
         required: true,
       }],
-      guilds: [Guilds.APPDEV, Guilds.FNBRJS],
+      guilds: [Guilds.FNBRJS],
     });
   }
 
