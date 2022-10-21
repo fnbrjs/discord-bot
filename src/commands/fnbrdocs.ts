@@ -37,11 +37,14 @@ class DocsCommand extends Command {
 
     const docs = await this.client.fnbrjsDocs.fetch(version);
     if (!docs) {
-      await i.reply(this.client.embedify({
-        title: 'Couldn\'t resolve documentation version',
-        description: `The version \`${version}\` wasn't found! Try \`master\`, \`stable\` or \`2.0.0\``,
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Couldn\'t resolve documentation version',
+          description: `The version \`${version}\` wasn't found! Try \`master\`, \`stable\` or \`2.0.0\``,
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
@@ -51,11 +54,14 @@ class DocsCommand extends Command {
     const resolvedClassLike = findClassLike(docs, className);
 
     if (!resolvedClassLike) {
-      await i.reply(this.client.embedify({
-        title: 'Couldn\'t resolve documentation link',
-        description: `A class / typedef / interface with the name \`${className}\` wasn't found!`,
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Couldn\'t resolve documentation link',
+          description: `A class / typedef / interface with the name \`${className}\` wasn't found!`,
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
@@ -71,11 +77,14 @@ class DocsCommand extends Command {
       }
 
       if (!resolvedProperty) {
-        await i.reply(this.client.embedify({
-          title: 'Couldn\'t resolve documentation link',
-          description: `A property / method with the name \`${propertyName}\` wasn't found!`,
-          color: colors.ERROR_RED,
-        }));
+        await i.reply({
+          ...this.client.embedify({
+            title: 'Couldn\'t resolve documentation link',
+            description: `A property / method with the name \`${propertyName}\` wasn't found!`,
+            color: colors.ERROR_RED,
+          }),
+          ephemeral: true,
+        });
 
         return;
       }

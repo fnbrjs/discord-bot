@@ -37,21 +37,27 @@ class AddReactionRoleCommand extends Command {
     const messageLink = options.getString('message', true);
 
     if (!/\/channels\/(\d+)\/(\d+)\/(\d+)/.test(messageLink)) {
-      await i.reply(this.client.embedify({
-        title: 'Cannot create reaction role',
-        description: `The message **${messageLink}** couldn't be resolved`,
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Cannot create reaction role',
+          description: `The message **${messageLink}** couldn't be resolved`,
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
 
     if (!emojiRegex.test(emoji)) {
-      await i.reply(this.client.embedify({
-        title: 'Cannot create reaction role',
-        description: `**${emoji}** is not a valid emoji`,
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Cannot create reaction role',
+          description: `**${emoji}** is not a valid emoji`,
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
@@ -61,21 +67,27 @@ class AddReactionRoleCommand extends Command {
     const resolvedMessage = await this.resolveMessage(guildId, channelId, messageId);
 
     if (!resolvedMessage) {
-      await i.reply(this.client.embedify({
-        title: 'Cannot create reaction role',
-        description: `The message **${messageLink}** couldn't be resolved`,
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Cannot create reaction role',
+          description: `The message **${messageLink}** couldn't be resolved`,
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
 
     if (await this.client.db.ReactionRoleModel.exists({ message_id: resolvedMessage.message.id, emoji })) {
-      await i.reply(this.client.embedify({
-        title: 'Cannot create reaction role',
-        description: 'A reaction role with the same emoji already exists',
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Cannot create reaction role',
+          description: 'A reaction role with the same emoji already exists',
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }

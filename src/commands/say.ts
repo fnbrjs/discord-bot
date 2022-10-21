@@ -31,11 +31,14 @@ class SayCommand extends Command {
     const text = options.getString('text', true);
 
     if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildVoice) {
-      await i.reply(this.client.embedify({
-        title: 'Cannot send message',
-        description: 'Please select a channel that can receive messages',
-        color: colors.ERROR_RED,
-      }));
+      await i.reply({
+        ...this.client.embedify({
+          title: 'Cannot send message',
+          description: 'Please select a channel that can receive messages',
+          color: colors.ERROR_RED,
+        }),
+        ephemeral: true,
+      });
 
       return;
     }
