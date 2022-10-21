@@ -6,11 +6,12 @@ import {
 import dotenv from 'dotenv';
 import pino from 'pino';
 import { promises as fs } from 'fs';
+import axios, { AxiosInstance } from 'axios';
 import { Config, EmbedData } from '../resources/structs';
 import Command from './structs/Command';
 import Event from './structs/Event';
 import Database from './database/Database';
-import FNBRJSDocsManager from './docs/FNBRJSDocsManager';
+import { LogEvents } from '../resources/constants';
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ class Client extends DiscordClient {
   public db: Database;
   public config!: Config;
   public logger: pino.Logger;
-  public fnbrjsDocs: FNBRJSDocsManager;
+  public http: AxiosInstance;
+  public httpLogger: pino.Logger;
   constructor() {
     super({
       intents: [
@@ -83,10 +85,13 @@ class Client extends DiscordClient {
     this.commands = new Collection();
     this.events = new Collection();
 
-    this.fnbrjsDocs = new FNBRJSDocsManager(this);
+    this.http = axios.create();
+    this.httpLogger = this.logger.child({ module: 'HTTP' });
   }
 
   public async start() {
+    this.registerHttpLogging();
+
     await this.db.start();
     this.logger.info('Connected to MongoDB');
 
@@ -169,6 +174,33 @@ class Client extends DiscordClient {
       // eslint-disable-next-line no-await-in-loop
       await guild.commands.set(guildCommands.map((c) => c.toObject()));
     }
+  }
+
+  public registerHttpLogging() {
+    this.http.interceptors.request.use((req) => {
+      this.logger.trace({
+        type: LogEvents.HTTP_REQUEST_SENT,
+        method: req.method?.toUpperCase(),
+        url: req.url,
+      }, `${req.method?.toUpperCase()} ${req.url}`);
+
+      if (!req.headers) req.headers = {};
+      req.headers['x-req-start'] = Date.now().toString();
+
+      return req;
+    });
+
+    this.http.interceptors.response.use((res) => {
+      const requestStartTimestamp = parseInt(res.config.headers?.['x-req-start']?.toString() || '', 10);
+
+      this.logger.trace({
+        type: parseInt(res.status.toString()[0], 10) < 4 ? LogEvents.HTTP_RESPONSE_RECEIVED : LogEvents.HTTP_RESPONSE_ERROR,
+        method: res.config.method?.toUpperCase(),
+        url: res.config.url,
+      }, `${res.config.method?.toUpperCase()} ${res.config.url} (${res.status} ${res.statusText}, ${Date.now() - requestStartTimestamp}ms)`);
+
+      return res;
+    });
   }
 
   public embedify(data: EmbedData) {

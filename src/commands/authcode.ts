@@ -1,7 +1,6 @@
 import {
   ApplicationCommandOptionType, AutocompleteInteraction, CacheType, CommandInteraction,
 } from 'discord.js';
-import axios from 'axios';
 import Client from '../Client';
 import Command from '../structs/Command';
 import { CommandData, CommandOptions } from '../../resources/structs';
@@ -69,7 +68,7 @@ class AuthCodeCommand extends Command {
   }
 
   private async fetchClients() {
-    const { data: rawClients } = await axios({
+    const { data: rawClients } = await this.client.http({
       method: 'GET',
       url: 'https://raw.githubusercontent.com/MixV2/EpicResearch/master/docs/auth/auth_clients.md',
       headers: {

@@ -1,10 +1,11 @@
 import {
   ApplicationCommandOptionType, AutocompleteInteraction, CacheType, CommandInteraction,
+  Collection,
 } from 'discord.js';
 import Client from '../Client';
 import Command from '../structs/Command';
 import { CommandData, CommandOptions } from '../../resources/structs';
-import { ClassPropOrMethod } from '../../resources/httpResponses';
+import { CachedDocsData, ClassPropOrMethod, DocsData } from '../../resources/httpResponses';
 import { colors } from '../../resources/constants';
 import {
   findClassLike, getDocsLink, parseType, searchClassLike,
@@ -12,6 +13,7 @@ import {
 import builtInTypes from '../../resources/builtInTypes';
 
 class DocsCommand extends Command {
+  private cachedDocsVersions: Collection<string, CachedDocsData>;
   constructor(client: Client, data: CommandData) {
     super(client, {
       ...data,
@@ -29,13 +31,15 @@ class DocsCommand extends Command {
         required: false,
       }],
     });
+
+    this.cachedDocsVersions = new Collection();
   }
 
   public async exec(i: CommandInteraction, options: CommandOptions) {
     const link = options.getString('link', true);
     const version = options.getString('version', false) || 'stable';
 
-    const docs = await this.client.fnbrjsDocs.fetch(version);
+    const docs = await this.fetchDocs(version);
     if (!docs) {
       await i.reply({
         ...this.client.embedify({
@@ -167,7 +171,7 @@ class DocsCommand extends Command {
     const link = args.shift()!.value as string;
     const version = args.shift()?.value as string | undefined || 'stable';
 
-    const docs = await this.client.fnbrjsDocs.fetch(version);
+    const docs = await this.fetchDocs(version);
     if (!docs) {
       await i.respond([]);
       return;
@@ -205,6 +209,31 @@ class DocsCommand extends Command {
           value: name,
         };
       }));
+  }
+
+  private async fetchDocs(version: string): Promise<DocsData | undefined> {
+    const cachedDocsVersion = this.cachedDocsVersions.get(version);
+    if (cachedDocsVersion && Date.now() - cachedDocsVersion.cachedAt.getTime() < 60000) {
+      return cachedDocsVersion;
+    }
+
+    try {
+      const docsData = await this.client.http({
+        method: 'GET',
+        url: `https://raw.githubusercontent.com/fnbrjs/fnbr.js/docs/${version}.json`,
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN!}`,
+        },
+      });
+
+      this.cachedDocsVersions.set(version, {
+        ...docsData.data as any,
+        cachedAt: new Date(),
+      });
+      return docsData.data;
+    } catch (err) {
+      return undefined;
+    }
   }
 }
 
